@@ -1,0 +1,50 @@
+syntax = "proto3";
+package protocol;
+option go_package = "github.com/lucyquest/petinfoservice/petinfoproto";
+
+import "google/protobuf/timestamp.proto";
+
+message Pet {
+  string ID = 1;
+  string Name = 2;
+  google.protobuf.Timestamp DateOfBirth = 3;
+}
+
+message PetGetRequest {
+  string ID = 1;
+}
+
+message PetGetResponse {
+  Pet Pet = 1;
+}
+
+message PetGetMultipleRequest {
+  repeated string IDs = 1;
+}
+
+message PetGetMultipleResponse {
+  repeated Pet Pets = 1;
+}
+
+message PetEditNameRequest {
+  string ID = 1;
+  string IdempotencyKey = 2;
+  string Name = 3;
+}
+
+message PetEditNameResponse {}
+
+message PetEditDateOfBirthRequest {
+  string ID = 1;
+  string IdempotencyKey = 2;
+  google.protobuf.Timestamp DateOfBirth = 3;
+}
+
+message PetEditDateOfBirthResponse {}
+
+service PetInfoService {
+  rpc Get(PetGetRequest) returns (PetGetResponse);
+  rpc GetMultiple(PetGetMultipleRequest) returns (PetGetMultipleResponse);
+  rpc EditName(PetEditNameRequest) returns (PetEditNameResponse);
+  rpc EditAge(PetEditDateOfBirthRequest) returns (PetEditDateOfBirthResponse);
+}
