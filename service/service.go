@@ -57,4 +57,5 @@ func (s *Service) Open() error {
 }
 
 func (s *Service) Close() {
+	s.grpcServer.GracefulStop()
 }
