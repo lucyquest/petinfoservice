@@ -30,7 +30,3 @@ func (p *petInfoService) EditName(_ context.Context, _ *petinfoproto.PetEditName
 func (p *petInfoService) EditAge(_ context.Context, _ *petinfoproto.PetEditDateOfBirthRequest) (*petinfoproto.PetEditDateOfBirthResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
-
-func (p *petInfoService) mustEmbedUnimplementedPetInfoServiceServer() {
-	panic("not implemented") // TODO: Implement
-}
