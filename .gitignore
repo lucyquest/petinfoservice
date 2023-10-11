@@ -17,5 +17,8 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# Binary from 'go build'
+petinfoservice
+
 # Go workspace file
 go.work
