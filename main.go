@@ -22,7 +22,7 @@ func getVCSCommit(b *debug.BuildInfo) (string, bool) {
 }
 
 func main() {
-	// Setup a context that is cancelled when we get an interupt
+	// Setup a context that is cancelled when we get an interrupt.
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	go func() {
@@ -33,6 +33,7 @@ func main() {
 		cancelFunc()
 	}()
 
+	// Parse command line arguments.
 	flagset := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 	addrFlag := flagset.String("addr", ":8080", "address server will listen on")
 	if err := flagset.Parse(os.Args[1:]); err != nil {
@@ -40,8 +41,10 @@ func main() {
 		return
 	}
 
+	// Set global slog handler to a JSON handler.
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
+	// Get VCS (git) information about how we are built.
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		slog.InfoContext(ctx, "unable to read build info")
@@ -54,6 +57,7 @@ func main() {
 
 	slog.InfoContext(ctx, "Starting petinfoservice", "commit", commit)
 
+	// Setup actual service.
 	serv := service.Service{
 		Addr: *addrFlag,
 	}
@@ -63,11 +67,13 @@ func main() {
 		servErr <- serv.Open()
 	}()
 
+	// Wait until there is an interrupt or the server returns an error.
 	select {
 	case <-ctx.Done():
 		slog.Info("closing server due to interrupt")
-		serv.Close()
 	case err := <-servErr:
 		slog.ErrorContext(ctx, "could not start petinfoservice", "error", err)
 	}
+
+	serv.Close()
 }
