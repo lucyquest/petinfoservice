@@ -49,6 +49,9 @@ func (s *Service) Open() error {
 		return fmt.Errorf("could not open tcp socket (%v) error (%w)", s.Addr, err)
 	}
 
+	// Set max grpc message we can receive to 1 MiB.
+	serverOptions = append(serverOptions, grpc.MaxRecvMsgSize(1024*1024))
+
 	s.grpcServer = grpc.NewServer(
 		serverOptions...,
 	)
