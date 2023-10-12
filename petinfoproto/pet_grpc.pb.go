@@ -23,6 +23,7 @@ const (
 	PetInfoService_GetMultiple_FullMethodName = "/protocol.PetInfoService/GetMultiple"
 	PetInfoService_EditName_FullMethodName    = "/protocol.PetInfoService/EditName"
 	PetInfoService_EditAge_FullMethodName     = "/protocol.PetInfoService/EditAge"
+	PetInfoService_Add_FullMethodName         = "/protocol.PetInfoService/Add"
 )
 
 // PetInfoServiceClient is the client API for PetInfoService service.
@@ -33,6 +34,7 @@ type PetInfoServiceClient interface {
 	GetMultiple(ctx context.Context, in *PetGetMultipleRequest, opts ...grpc.CallOption) (*PetGetMultipleResponse, error)
 	EditName(ctx context.Context, in *PetEditNameRequest, opts ...grpc.CallOption) (*PetEditNameResponse, error)
 	EditAge(ctx context.Context, in *PetEditDateOfBirthRequest, opts ...grpc.CallOption) (*PetEditDateOfBirthResponse, error)
+	Add(ctx context.Context, in *PetAddRequest, opts ...grpc.CallOption) (*PetAddResponse, error)
 }
 
 type petInfoServiceClient struct {
@@ -79,6 +81,15 @@ func (c *petInfoServiceClient) EditAge(ctx context.Context, in *PetEditDateOfBir
 	return out, nil
 }
 
+func (c *petInfoServiceClient) Add(ctx context.Context, in *PetAddRequest, opts ...grpc.CallOption) (*PetAddResponse, error) {
+	out := new(PetAddResponse)
+	err := c.cc.Invoke(ctx, PetInfoService_Add_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PetInfoServiceServer is the server API for PetInfoService service.
 // All implementations must embed UnimplementedPetInfoServiceServer
 // for forward compatibility
@@ -87,6 +98,7 @@ type PetInfoServiceServer interface {
 	GetMultiple(context.Context, *PetGetMultipleRequest) (*PetGetMultipleResponse, error)
 	EditName(context.Context, *PetEditNameRequest) (*PetEditNameResponse, error)
 	EditAge(context.Context, *PetEditDateOfBirthRequest) (*PetEditDateOfBirthResponse, error)
+	Add(context.Context, *PetAddRequest) (*PetAddResponse, error)
 	mustEmbedUnimplementedPetInfoServiceServer()
 }
 
@@ -105,6 +117,9 @@ func (UnimplementedPetInfoServiceServer) EditName(context.Context, *PetEditNameR
 }
 func (UnimplementedPetInfoServiceServer) EditAge(context.Context, *PetEditDateOfBirthRequest) (*PetEditDateOfBirthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditAge not implemented")
+}
+func (UnimplementedPetInfoServiceServer) Add(context.Context, *PetAddRequest) (*PetAddResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Add not implemented")
 }
 func (UnimplementedPetInfoServiceServer) mustEmbedUnimplementedPetInfoServiceServer() {}
 
@@ -191,6 +206,24 @@ func _PetInfoService_EditAge_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PetInfoService_Add_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PetAddRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PetInfoServiceServer).Add(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PetInfoService_Add_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PetInfoServiceServer).Add(ctx, req.(*PetAddRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PetInfoService_ServiceDesc is the grpc.ServiceDesc for PetInfoService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -213,6 +246,10 @@ var PetInfoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EditAge",
 			Handler:    _PetInfoService_EditAge_Handler,
+		},
+		{
+			MethodName: "Add",
+			Handler:    _PetInfoService_Add_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

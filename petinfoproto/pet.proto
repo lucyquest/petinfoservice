@@ -27,24 +27,32 @@ message PetGetMultipleResponse {
 }
 
 message PetEditNameRequest {
-  string ID = 1;
-  string IdempotencyKey = 2;
+  string IdempotencyKey = 1;
+  string ID = 2;
   string Name = 3;
 }
 
 message PetEditNameResponse {}
 
 message PetEditDateOfBirthRequest {
-  string ID = 1;
-  string IdempotencyKey = 2;
+  string IdempotencyKey = 1;
+  string ID = 2;
   google.protobuf.Timestamp DateOfBirth = 3;
 }
 
 message PetEditDateOfBirthResponse {}
+
+message PetAddRequest {
+  string IdempotencyKey = 1;
+  Pet Pet = 2; 
+}
+
+message PetAddResponse {}
 
 service PetInfoService {
   rpc Get(PetGetRequest) returns (PetGetResponse);
   rpc GetMultiple(PetGetMultipleRequest) returns (PetGetMultipleResponse);
   rpc EditName(PetEditNameRequest) returns (PetEditNameResponse);
   rpc EditAge(PetEditDateOfBirthRequest) returns (PetEditDateOfBirthResponse);
+  rpc Add(PetAddRequest) returns (PetAddResponse);
 }
