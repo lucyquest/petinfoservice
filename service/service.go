@@ -64,5 +64,9 @@ func (s *Service) Open() error {
 }
 
 func (s *Service) Close() {
-	s.grpcServer.GracefulStop()
+	// Protect against a nil pointer if Close() is called and server was never setup.
+	// This might happen if the Close() is in a defer and we returned before the grpc.NewServer was assigned.
+	if s.grpcServer != nil {
+		s.grpcServer.GracefulStop()
+	}
 }
