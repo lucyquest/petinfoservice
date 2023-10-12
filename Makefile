@@ -6,7 +6,9 @@ run: build
 
 generate-proto:
 	cd petinfoproto && make
-generate: generate-proto
+generate-sqlc:
+	sqlc generate
+generate: generate-proto generate-sqlc
 
 build-dockerfile:
 	podman build . --tag claytontii/petinfoservice:latest

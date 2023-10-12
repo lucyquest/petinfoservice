@@ -1,0 +1,5 @@
+CREATE TABLE pets (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  date_of_birth TIMESTAMP NOT NULL
+)
