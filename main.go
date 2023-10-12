@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -32,6 +33,13 @@ func main() {
 		cancelFunc()
 	}()
 
+	flagset := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	addrFlag := flagset.String("addr", ":8080", "address server will listen on")
+	if err := flagset.Parse(os.Args[1:]); err != nil {
+		slog.ErrorContext(ctx, "could not parse command line flags", "error", err)
+		return
+	}
+
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
 	info, ok := debug.ReadBuildInfo()
@@ -46,12 +54,20 @@ func main() {
 
 	slog.InfoContext(ctx, "Starting petinfoservice", "commit", commit)
 
-	serv := service.Service{}
-	if err := serv.Open(); err != nil {
-		slog.ErrorContext(ctx, "could not start petinfoservice", "error", err)
-		return
+	serv := service.Service{
+		Addr: *addrFlag,
 	}
 
-	<-ctx.Done()
-	serv.Close()
+	servErr := make(chan error, 1)
+	go func() {
+		servErr <- serv.Open()
+	}()
+
+	select {
+	case <-ctx.Done():
+		slog.Info("closing server due to interrupt")
+		serv.Close()
+	case err := <-servErr:
+		slog.ErrorContext(ctx, "could not start petinfoservice", "error", err)
+	}
 }

@@ -2,7 +2,9 @@ package service
 
 import (
 	"crypto/tls"
+	"fmt"
 	"log/slog"
+	"net"
 
 	"github.com/lucyquest/petinfoservice/petinfoproto"
 	"google.golang.org/grpc"
@@ -42,6 +44,11 @@ func (s *Service) Open() error {
 		)
 	}
 
+	l, err := net.Listen("tcp", s.Addr)
+	if err != nil {
+		return fmt.Errorf("could not open tcp socket (%v) error (%w)", s.Addr, err)
+	}
+
 	s.grpcServer = grpc.NewServer(
 		serverOptions...,
 	)
@@ -53,7 +60,7 @@ func (s *Service) Open() error {
 
 	petinfoproto.RegisterPetInfoServiceServer(s.grpcServer, s.petInfoService)
 
-	return nil
+	return s.grpcServer.Serve(l)
 }
 
 func (s *Service) Close() {
