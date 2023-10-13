@@ -6,10 +6,12 @@ package database
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Pet struct {
-	ID          string
+	ID          uuid.UUID
 	Name        string
 	DateOfBirth time.Time
 }

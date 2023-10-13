@@ -3,6 +3,7 @@ module github.com/lucyquest/petinfoservice
 go 1.21.1
 
 require (
+	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.9
 	google.golang.org/grpc v1.58.2
 	google.golang.org/protobuf v1.31.0

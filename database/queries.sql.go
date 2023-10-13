@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -16,7 +17,7 @@ SELECT id, name, date_of_birth FROM pets
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetPetByID(ctx context.Context, ids string) (Pet, error) {
+func (q *Queries) GetPetByID(ctx context.Context, ids uuid.UUID) (Pet, error) {
 	row := q.db.QueryRowContext(ctx, getPetByID, ids)
 	var i Pet
 	err := row.Scan(&i.ID, &i.Name, &i.DateOfBirth)
@@ -25,10 +26,10 @@ func (q *Queries) GetPetByID(ctx context.Context, ids string) (Pet, error) {
 
 const getPetsByIDs = `-- name: GetPetsByIDs :many
 SELECT id, name, date_of_birth FROM pets
-WHERE id = ANY($1::TEXT[])
+WHERE id = ANY($1::uuid[])
 `
 
-func (q *Queries) GetPetsByIDs(ctx context.Context, ids []string) ([]Pet, error) {
+func (q *Queries) GetPetsByIDs(ctx context.Context, ids []uuid.UUID) ([]Pet, error) {
 	rows, err := q.db.QueryContext(ctx, getPetsByIDs, pq.Array(ids))
 	if err != nil {
 		return nil, err
