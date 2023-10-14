@@ -47,7 +47,9 @@ message PetAddRequest {
   Pet Pet = 2; 
 }
 
-message PetAddResponse {}
+message PetAddResponse {
+  string ID = 1;
+}
 
 service PetInfoService {
   rpc Get(PetGetRequest) returns (PetGetResponse);
