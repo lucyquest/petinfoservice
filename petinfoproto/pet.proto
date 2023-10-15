@@ -27,17 +27,15 @@ message PetGetMultipleResponse {
 }
 
 message PetEditNameRequest {
-  string IdempotencyKey = 1;
-  string ID = 2;
-  string Name = 3;
+  string ID = 1;
+  string Name = 2;
 }
 
 message PetEditNameResponse {}
 
 message PetEditDateOfBirthRequest {
-  string IdempotencyKey = 1;
-  string ID = 2;
-  google.protobuf.Timestamp DateOfBirth = 3;
+  string ID = 1;
+  google.protobuf.Timestamp DateOfBirth = 2;
 }
 
 message PetEditDateOfBirthResponse {}
