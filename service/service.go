@@ -54,11 +54,11 @@ func (p *petInfoService) GetMultiple(ctx context.Context, req *petinfoproto.PetG
 	return &petinfoproto.PetGetMultipleResponse{Pets: petsAsProtoBufPets(pets)}, nil
 }
 
-func (p *petInfoService) EditName(_ context.Context, _ *petinfoproto.PetEditNameRequest) (*petinfoproto.PetEditNameResponse, error) {
+func (p *petInfoService) UpdateName(_ context.Context, _ *petinfoproto.PetUpdateNameRequest) (*petinfoproto.PetUpdateNameResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (p *petInfoService) EditAge(_ context.Context, _ *petinfoproto.PetEditDateOfBirthRequest) (*petinfoproto.PetEditDateOfBirthResponse, error) {
+func (p *petInfoService) UpdateAge(_ context.Context, _ *petinfoproto.PetUpdateDateOfBirthRequest) (*petinfoproto.PetUpdateDateOfBirthResponse, error) {
 	panic("not implemented") // TODO: Implement
 }
 

@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -50,4 +51,13 @@ func (q *Queries) GetPetsByIDs(ctx context.Context, ids []uuid.UUID) ([]Pet, err
 		return nil, err
 	}
 	return items, nil
+}
+
+const updatePetDateOfBirth = `-- name: UpdatePetDateOfBirth :exec
+UPDATE pets SET date_of_birth = $1
+`
+
+func (q *Queries) UpdatePetDateOfBirth(ctx context.Context, dateOfBirth time.Time) error {
+	_, err := q.db.ExecContext(ctx, updatePetDateOfBirth, dateOfBirth)
+	return err
 }
