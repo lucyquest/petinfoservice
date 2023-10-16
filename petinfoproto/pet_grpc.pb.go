@@ -19,11 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	PetInfoService_Get_FullMethodName         = "/protocol.PetInfoService/Get"
-	PetInfoService_GetMultiple_FullMethodName = "/protocol.PetInfoService/GetMultiple"
-	PetInfoService_UpdateName_FullMethodName  = "/protocol.PetInfoService/UpdateName"
-	PetInfoService_UpdateAge_FullMethodName   = "/protocol.PetInfoService/UpdateAge"
-	PetInfoService_Add_FullMethodName         = "/protocol.PetInfoService/Add"
+	PetInfoService_Get_FullMethodName               = "/protocol.PetInfoService/Get"
+	PetInfoService_GetMultiple_FullMethodName       = "/protocol.PetInfoService/GetMultiple"
+	PetInfoService_UpdateName_FullMethodName        = "/protocol.PetInfoService/UpdateName"
+	PetInfoService_UpdateDateOfBirth_FullMethodName = "/protocol.PetInfoService/UpdateDateOfBirth"
+	PetInfoService_Add_FullMethodName               = "/protocol.PetInfoService/Add"
 )
 
 // PetInfoServiceClient is the client API for PetInfoService service.
@@ -33,7 +33,7 @@ type PetInfoServiceClient interface {
 	Get(ctx context.Context, in *PetGetRequest, opts ...grpc.CallOption) (*PetGetResponse, error)
 	GetMultiple(ctx context.Context, in *PetGetMultipleRequest, opts ...grpc.CallOption) (*PetGetMultipleResponse, error)
 	UpdateName(ctx context.Context, in *PetUpdateNameRequest, opts ...grpc.CallOption) (*PetUpdateNameResponse, error)
-	UpdateAge(ctx context.Context, in *PetUpdateDateOfBirthRequest, opts ...grpc.CallOption) (*PetUpdateDateOfBirthResponse, error)
+	UpdateDateOfBirth(ctx context.Context, in *PetUpdateDateOfBirthRequest, opts ...grpc.CallOption) (*PetUpdateDateOfBirthResponse, error)
 	Add(ctx context.Context, in *PetAddRequest, opts ...grpc.CallOption) (*PetAddResponse, error)
 }
 
@@ -72,9 +72,9 @@ func (c *petInfoServiceClient) UpdateName(ctx context.Context, in *PetUpdateName
 	return out, nil
 }
 
-func (c *petInfoServiceClient) UpdateAge(ctx context.Context, in *PetUpdateDateOfBirthRequest, opts ...grpc.CallOption) (*PetUpdateDateOfBirthResponse, error) {
+func (c *petInfoServiceClient) UpdateDateOfBirth(ctx context.Context, in *PetUpdateDateOfBirthRequest, opts ...grpc.CallOption) (*PetUpdateDateOfBirthResponse, error) {
 	out := new(PetUpdateDateOfBirthResponse)
-	err := c.cc.Invoke(ctx, PetInfoService_UpdateAge_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, PetInfoService_UpdateDateOfBirth_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ type PetInfoServiceServer interface {
 	Get(context.Context, *PetGetRequest) (*PetGetResponse, error)
 	GetMultiple(context.Context, *PetGetMultipleRequest) (*PetGetMultipleResponse, error)
 	UpdateName(context.Context, *PetUpdateNameRequest) (*PetUpdateNameResponse, error)
-	UpdateAge(context.Context, *PetUpdateDateOfBirthRequest) (*PetUpdateDateOfBirthResponse, error)
+	UpdateDateOfBirth(context.Context, *PetUpdateDateOfBirthRequest) (*PetUpdateDateOfBirthResponse, error)
 	Add(context.Context, *PetAddRequest) (*PetAddResponse, error)
 	mustEmbedUnimplementedPetInfoServiceServer()
 }
@@ -115,8 +115,8 @@ func (UnimplementedPetInfoServiceServer) GetMultiple(context.Context, *PetGetMul
 func (UnimplementedPetInfoServiceServer) UpdateName(context.Context, *PetUpdateNameRequest) (*PetUpdateNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateName not implemented")
 }
-func (UnimplementedPetInfoServiceServer) UpdateAge(context.Context, *PetUpdateDateOfBirthRequest) (*PetUpdateDateOfBirthResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateAge not implemented")
+func (UnimplementedPetInfoServiceServer) UpdateDateOfBirth(context.Context, *PetUpdateDateOfBirthRequest) (*PetUpdateDateOfBirthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDateOfBirth not implemented")
 }
 func (UnimplementedPetInfoServiceServer) Add(context.Context, *PetAddRequest) (*PetAddResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Add not implemented")
@@ -188,20 +188,20 @@ func _PetInfoService_UpdateName_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PetInfoService_UpdateAge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _PetInfoService_UpdateDateOfBirth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PetUpdateDateOfBirthRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PetInfoServiceServer).UpdateAge(ctx, in)
+		return srv.(PetInfoServiceServer).UpdateDateOfBirth(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PetInfoService_UpdateAge_FullMethodName,
+		FullMethod: PetInfoService_UpdateDateOfBirth_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PetInfoServiceServer).UpdateAge(ctx, req.(*PetUpdateDateOfBirthRequest))
+		return srv.(PetInfoServiceServer).UpdateDateOfBirth(ctx, req.(*PetUpdateDateOfBirthRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -244,8 +244,8 @@ var PetInfoService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PetInfoService_UpdateName_Handler,
 		},
 		{
-			MethodName: "UpdateAge",
-			Handler:    _PetInfoService_UpdateAge_Handler,
+			MethodName: "UpdateDateOfBirth",
+			Handler:    _PetInfoService_UpdateDateOfBirth_Handler,
 		},
 		{
 			MethodName: "Add",

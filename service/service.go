@@ -55,11 +55,27 @@ func (p *petInfoService) GetMultiple(ctx context.Context, req *petinfoproto.PetG
 }
 
 func (p *petInfoService) UpdateName(_ context.Context, _ *petinfoproto.PetUpdateNameRequest) (*petinfoproto.PetUpdateNameResponse, error) {
-	panic("not implemented") // TODO: Implement
+
+	return nil, nil
 }
 
-func (p *petInfoService) UpdateAge(_ context.Context, _ *petinfoproto.PetUpdateDateOfBirthRequest) (*petinfoproto.PetUpdateDateOfBirthResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (p *petInfoService) UpdateDateOfBirth(ctx context.Context, req *petinfoproto.PetUpdateDateOfBirthRequest) (*petinfoproto.PetUpdateDateOfBirthResponse, error) {
+	id, err := uuid.Parse(req.ID)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid ID")
+	}
+
+	err = p.db.UpdatePetDateOfBirth(ctx, database.UpdatePetDateOfBirthParams{
+		ID:          id,
+		DateOfBirth: req.DateOfBirth.AsTime(),
+	})
+	switch {
+	case err != nil:
+		slog.Error("Unknown error from database", "error", err)
+		return nil, status.Error(codes.Internal, "Internal error occurred")
+	}
+
+	return nil, nil
 }
 
 func (p *petInfoService) Add(_ context.Context, _ *petinfoproto.PetAddRequest) (*petinfoproto.PetAddResponse, error) {

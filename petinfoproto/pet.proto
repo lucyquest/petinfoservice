@@ -53,6 +53,6 @@ service PetInfoService {
   rpc Get(PetGetRequest) returns (PetGetResponse);
   rpc GetMultiple(PetGetMultipleRequest) returns (PetGetMultipleResponse);
   rpc UpdateName(PetUpdateNameRequest) returns (PetUpdateNameResponse);
-  rpc UpdateAge(PetUpdateDateOfBirthRequest) returns (PetUpdateDateOfBirthResponse);
+  rpc UpdateDateOfBirth(PetUpdateDateOfBirthRequest) returns (PetUpdateDateOfBirthResponse);
   rpc Add(PetAddRequest) returns (PetAddResponse);
 }

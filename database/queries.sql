@@ -7,4 +7,4 @@ SELECT * FROM pets
 WHERE id = ANY(sqlc.arg(ids)::uuid[]);
 
 -- name: UpdatePetDateOfBirth :exec
-UPDATE pets SET date_of_birth = $1;
+UPDATE pets SET date_of_birth = $2 WHERE id = $1;

@@ -54,10 +54,15 @@ func (q *Queries) GetPetsByIDs(ctx context.Context, ids []uuid.UUID) ([]Pet, err
 }
 
 const updatePetDateOfBirth = `-- name: UpdatePetDateOfBirth :exec
-UPDATE pets SET date_of_birth = $1
+UPDATE pets SET date_of_birth = $2 WHERE id = $1
 `
 
-func (q *Queries) UpdatePetDateOfBirth(ctx context.Context, dateOfBirth time.Time) error {
-	_, err := q.db.ExecContext(ctx, updatePetDateOfBirth, dateOfBirth)
+type UpdatePetDateOfBirthParams struct {
+	ID          uuid.UUID
+	DateOfBirth time.Time
+}
+
+func (q *Queries) UpdatePetDateOfBirth(ctx context.Context, arg UpdatePetDateOfBirthParams) error {
+	_, err := q.db.ExecContext(ctx, updatePetDateOfBirth, arg.ID, arg.DateOfBirth)
 	return err
 }
