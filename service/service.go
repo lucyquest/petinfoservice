@@ -54,7 +54,21 @@ func (p *petInfoService) GetMultiple(ctx context.Context, req *petinfoproto.PetG
 	return &petinfoproto.PetGetMultipleResponse{Pets: petsAsProtoBufPets(pets)}, nil
 }
 
-func (p *petInfoService) UpdateName(_ context.Context, _ *petinfoproto.PetUpdateNameRequest) (*petinfoproto.PetUpdateNameResponse, error) {
+func (p *petInfoService) UpdateName(ctx context.Context, req *petinfoproto.PetUpdateNameRequest) (*petinfoproto.PetUpdateNameResponse, error) {
+	id, err := uuid.Parse(req.ID)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid ID")
+	}
+
+	err = p.db.UpdatePetName(ctx, database.UpdatePetNameParams{
+		ID:   id,
+		Name: req.Name,
+	})
+	switch {
+	case err != nil:
+		slog.Error("Unknown error from database", "error", err)
+		return nil, status.Error(codes.Internal, "Internal error occurred")
+	}
 
 	return nil, nil
 }

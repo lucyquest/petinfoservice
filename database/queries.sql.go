@@ -66,3 +66,17 @@ func (q *Queries) UpdatePetDateOfBirth(ctx context.Context, arg UpdatePetDateOfB
 	_, err := q.db.ExecContext(ctx, updatePetDateOfBirth, arg.ID, arg.DateOfBirth)
 	return err
 }
+
+const updatePetName = `-- name: UpdatePetName :exec
+UPDATE pets SET name = $2 WHERE id = $1
+`
+
+type UpdatePetNameParams struct {
+	ID   uuid.UUID
+	Name string
+}
+
+func (q *Queries) UpdatePetName(ctx context.Context, arg UpdatePetNameParams) error {
+	_, err := q.db.ExecContext(ctx, updatePetName, arg.ID, arg.Name)
+	return err
+}

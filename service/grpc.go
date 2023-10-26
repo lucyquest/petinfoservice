@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 
+	"github.com/lucyquest/petinfoservice/database"
 	"github.com/lucyquest/petinfoservice/petinfoproto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -18,6 +19,8 @@ type Service struct {
 	Addr string
 	// Certificate to use if using TLS
 	Certificate *tls.Certificate
+	// Database to use
+	Database *database.Queries
 
 	grpcServer *grpc.Server
 
@@ -28,6 +31,8 @@ type Service struct {
 
 func (s *Service) Open() error {
 	var serverOptions []grpc.ServerOption
+
+	// TODO: add client certificate support
 
 	// Decide if we should use TLS
 	if s.Certificate == nil {
@@ -48,6 +53,7 @@ func (s *Service) Open() error {
 	if err != nil {
 		return fmt.Errorf("could not open tcp socket (%v) error (%w)", s.Addr, err)
 	}
+	s.Addr = l.Addr().String()
 
 	// Set max grpc message we can receive to 1 MiB.
 	serverOptions = append(serverOptions, grpc.MaxRecvMsgSize(1024*1024))
@@ -57,7 +63,7 @@ func (s *Service) Open() error {
 	)
 
 	// Initalize petInfoService
-	s.petInfoService = &petInfoService{}
+	s.petInfoService = &petInfoService{db: *s.Database}
 
 	petinfoproto.RegisterPetInfoServiceServer(s.grpcServer, s.petInfoService)
 
