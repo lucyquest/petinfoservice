@@ -92,6 +92,16 @@ func (p *petInfoService) UpdateDateOfBirth(ctx context.Context, req *petinfoprot
 	return nil, nil
 }
 
-func (p *petInfoService) Add(_ context.Context, _ *petinfoproto.PetAddRequest) (*petinfoproto.PetAddResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (p *petInfoService) Add(ctx context.Context, req *petinfoproto.PetAddRequest) (*petinfoproto.PetAddResponse, error) {
+	id, err := p.db.AddPet(ctx, database.AddPetParams{
+		Name:        req.Pet.Name,
+		DateOfBirth: req.Pet.DateOfBirth.AsTime(),
+	})
+	switch {
+	case err != nil:
+		slog.Error("Unknown error from database", "error", err)
+		return nil, status.Error(codes.Internal, "Internal error occurred")
+	}
+
+	return &petinfoproto.PetAddResponse{ID: id.String()}, nil
 }

@@ -13,6 +13,22 @@ import (
 	"github.com/lib/pq"
 )
 
+const addPet = `-- name: AddPet :one
+INSERT INTO pets (name, date_of_birth) VALUES ($1, $2) RETURNING id
+`
+
+type AddPetParams struct {
+	Name        string
+	DateOfBirth time.Time
+}
+
+func (q *Queries) AddPet(ctx context.Context, arg AddPetParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, addPet, arg.Name, arg.DateOfBirth)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getPetByID = `-- name: GetPetByID :one
 SELECT id, name, date_of_birth FROM pets
 WHERE id = $1 LIMIT 1
