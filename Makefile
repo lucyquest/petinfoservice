@@ -4,6 +4,11 @@ build:
 run: build
 	./petinfoservice
 
+precommit:
+	golangci-lint run
+	gosec ./...
+	go mod tidy
+
 generate-proto:
 	cd petinfoproto && make
 generate-sqlc:
