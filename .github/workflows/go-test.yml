@@ -1,0 +1,23 @@
+name: go test
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      petinfoservice-postgres:
+        image: postgres:16-alpine3.17
+        env:
+          POSTGRES_PASSWORD: bestpassword
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.21.3
+
+    - name: Test
+      run: go test -race -v ./...
