@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -32,7 +33,13 @@ func TestMain(m *testing.M) {
 
 	// Setup database and service for testing.
 	// TODO: switch to a database per test?
-	connMainURI := "postgres://postgres:bestpassword@localhost/?sslmode=disable"
+
+	// Prepare a database to use in postgres
+	postgresUser := os.Getenv("POSTGRES_USER")
+	postgresPass := os.Getenv("POSTGRES_PASS")
+	postgresHost := os.Getenv("POSTGRES_HOST")
+
+	connMainURI := fmt.Sprintf("postgres://%v:%v@%v?sslmode=disable", postgresUser, postgresPass, postgresHost)
 	dbMain, err := sql.Open("postgres", connMainURI)
 	if err != nil {
 		log.Printf("could not open postgres database (%v) error (%v)", connMainURI, err)
@@ -46,7 +53,8 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	connURI := "postgres://postgres:bestpassword@localhost/petinfoservice?sslmode=disable"
+	// Connect to the prepared postgres database and assign it to a global variable
+	connURI := fmt.Sprintf("postgres://%v:%v@%v/petinfoservice?sslmode=disable", postgresUser, postgresPass, postgresHost)
 	db, err := sql.Open("postgres", connURI)
 	if err != nil {
 		log.Fatalf("could not open petinfoservice database (%v) error (%v)", connURI, err)

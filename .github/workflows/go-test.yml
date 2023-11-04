@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      petinfoservice-postgres:
+      postgres:
         image: postgres:16-alpine3.17
         env:
           POSTGRES_PASSWORD: bestpassword
@@ -20,4 +20,4 @@ jobs:
         go-version: 1.21.3
 
     - name: Test
-      run: go test -race -v ./...
+      run: POSTGRES_USER=postgres POSTGRES_PASS=bestpassword POSTGRES_HOST=postgres go test -race -v ./...
