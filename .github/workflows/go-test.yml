@@ -22,8 +22,5 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: 1.21.3
-
-    - name: Test dns
-      run: host postgres
     - name: Test
       run: POSTGRES_USER=postgres POSTGRES_PASS=bestpassword POSTGRES_HOST=127.0.0.1:5432 go test -race -v ./...
