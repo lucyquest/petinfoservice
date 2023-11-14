@@ -1,11 +1,14 @@
 package service
 
 import (
+	"context"
 	"crypto/tls"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"net"
 
+	"github.com/google/uuid"
 	"github.com/lucyquest/petinfoservice/database"
 	"github.com/lucyquest/petinfoservice/petinfoproto"
 	"google.golang.org/grpc"
@@ -19,12 +22,20 @@ type Service struct {
 	Addr string
 	// Certificate to use if using TLS
 	Certificate *tls.Certificate
-	// Database to use
-	Database *database.Queries
+	// Queries to use
+	Queries *database.Queries
+	// SQL DB
+	DB *sql.DB
 
 	grpcServer *grpc.Server
 
 	petInfoService *petInfoService
+}
+
+type UserID struct{}
+
+func (s *Service) authenticationUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return handler(context.WithValue(ctx, UserID{}, uuid.New()), req)
 }
 
 // TODO: readiness probe for k8s
@@ -57,13 +68,14 @@ func (s *Service) Open() error {
 
 	// Set max grpc message we can receive to 1 MiB.
 	serverOptions = append(serverOptions, grpc.MaxRecvMsgSize(1024*1024))
+	serverOptions = append(serverOptions, grpc.UnaryInterceptor(s.authenticationUnaryInterceptor))
 
 	s.grpcServer = grpc.NewServer(
 		serverOptions...,
 	)
 
 	// Initalize petInfoService
-	s.petInfoService = &petInfoService{db: *s.Database}
+	s.petInfoService = &petInfoService{queries: *s.Queries, db: s.DB}
 
 	petinfoproto.RegisterPetInfoServiceServer(s.grpcServer, s.petInfoService)
 

@@ -75,8 +75,9 @@ func TestMain(m *testing.M) {
 
 	// Startup gRPC service
 	service := Service{
-		Addr:     ":9999",
-		Database: database.New(db),
+		Addr:    ":9999",
+		Queries: database.New(db),
+		DB:      db,
 	}
 	serviceErr := make(chan error, 1)
 	go func() {

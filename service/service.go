@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -9,12 +10,14 @@ import (
 	"github.com/lucyquest/petinfoservice/petinfoproto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 type petInfoService struct {
 	petinfoproto.UnimplementedPetInfoServiceServer
 
-	db database.Queries
+	queries database.Queries
+	db      *sql.DB
 }
 
 func (p *petInfoService) Get(ctx context.Context, req *petinfoproto.PetGetRequest) (*petinfoproto.PetGetResponse, error) {
@@ -23,7 +26,7 @@ func (p *petInfoService) Get(ctx context.Context, req *petinfoproto.PetGetReques
 		return nil, status.Error(codes.InvalidArgument, "invalid ID")
 	}
 
-	pet, err := p.db.GetPetByID(ctx, id)
+	pet, err := p.queries.GetPetByID(ctx, id)
 	switch {
 	case err != nil:
 		slog.Error("Unknown error from database", "error", err)
@@ -44,7 +47,7 @@ func (p *petInfoService) GetMultiple(ctx context.Context, req *petinfoproto.PetG
 		ids = append(ids, id)
 	}
 
-	pets, err := p.db.GetPetsByIDs(ctx, ids)
+	pets, err := p.queries.GetPetsByIDs(ctx, ids)
 	switch {
 	case err != nil:
 		slog.Error("Unknown error from database", "error", err)
@@ -60,7 +63,7 @@ func (p *petInfoService) UpdateName(ctx context.Context, req *petinfoproto.PetUp
 		return nil, status.Error(codes.InvalidArgument, "invalid ID")
 	}
 
-	err = p.db.UpdatePetName(ctx, database.UpdatePetNameParams{
+	err = p.queries.UpdatePetName(ctx, database.UpdatePetNameParams{
 		ID:   id,
 		Name: req.Name,
 	})
@@ -79,7 +82,7 @@ func (p *petInfoService) UpdateDateOfBirth(ctx context.Context, req *petinfoprot
 		return nil, status.Error(codes.InvalidArgument, "invalid ID")
 	}
 
-	err = p.db.UpdatePetDateOfBirth(ctx, database.UpdatePetDateOfBirthParams{
+	err = p.queries.UpdatePetDateOfBirth(ctx, database.UpdatePetDateOfBirthParams{
 		ID:          id,
 		DateOfBirth: req.DateOfBirth.AsTime(),
 	})
