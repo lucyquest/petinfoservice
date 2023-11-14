@@ -96,15 +96,83 @@ func (p *petInfoService) UpdateDateOfBirth(ctx context.Context, req *petinfoprot
 }
 
 func (p *petInfoService) Add(ctx context.Context, req *petinfoproto.PetAddRequest) (*petinfoproto.PetAddResponse, error) {
-	id, err := p.db.AddPet(ctx, database.AddPetParams{
+	if req.IdempotencyKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "Please provide a IdempotencyKey")
+	}
+
+	if req.Pet == nil {
+		return nil, status.Error(codes.InvalidArgument, "Pet not provided")
+	}
+
+	if req.Pet.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "Must provide a Name")
+	}
+
+	if req.Pet.DateOfBirth == nil {
+		return nil, status.Error(codes.InvalidArgument, "Must provide a Date Of Birth")
+	}
+
+	if req.Pet.ID != "" {
+		return nil, status.Error(codes.InvalidArgument, "Pet ID must be empty")
+	}
+
+	requestProtobufBytes, err := proto.Marshal(req)
+	if err != nil {
+		slog.Error("Unknown error while marshaling request protobuf to bytes",
+			"error", err.Error(),
+			"method", petinfoproto.PetInfoService_Add_FullMethodName,
+		)
+		return nil, status.Error(codes.Internal, "Internal error occurred")
+	}
+
+	tx, err := p.db.Begin()
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Internal error occurred")
+	}
+	defer func() {
+		if err == nil {
+			return
+		}
+
+		if err2 := tx.Rollback(); err2 != nil {
+			slog.Error("Unknown error from database while rolling back transaction",
+				"error", err2.Error(),
+				"method", petinfoproto.PetInfoService_Add_FullMethodName,
+			)
+		}
+	}()
+
+	qtx := p.queries.WithTx(tx)
+
+	userID := ctx.Value(UserID{}).(uuid.UUID)
+	idem, err := qtx.GetIdempotencyEntry(ctx, database.GetIdempotencyEntryParams{
+		UserID:     userID,
+		Key:        req.IdempotencyKey,
+		MethodPath: petinfoproto.PetInfoService_Add_FullMethodName,
+		Request:    requestProtobufBytes,
+	})
+
+	_ = idem
+
+	petID, err := qtx.AddPet(ctx, database.AddPetParams{
 		Name:        req.Pet.Name,
 		DateOfBirth: req.Pet.DateOfBirth.AsTime(),
 	})
 	switch {
 	case err != nil:
-		slog.Error("Unknown error from database", "error", err)
+		slog.Error("Unknown error from database",
+			"error", err,
+			"method", petinfoproto.PetInfoService_Add_FullMethodName,
+		)
 		return nil, status.Error(codes.Internal, "Internal error occurred")
 	}
 
-	return &petinfoproto.PetAddResponse{ID: id.String()}, nil
+	if err = tx.Commit(); err != nil {
+		slog.Error("Unknown error from database committing transaction",
+			"error", err.Error(),
+			"method", petinfoproto.PetInfoService_Add_FullMethodName,
+		)
+	}
+
+	return &petinfoproto.PetAddResponse{ID: petID.String()}, nil
 }

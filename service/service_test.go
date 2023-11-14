@@ -144,7 +144,7 @@ func TestAddGetPets(t *testing.T) {
 
 	for i := range testPets {
 		addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
-			IdempotencyKey: "",
+			IdempotencyKey: uuid.NewString(),
 			Pet: &petinfoproto.Pet{
 				Name:        testPets[i].Name,
 				DateOfBirth: timestamppb.New(testPets[i].DateOfBirth),
