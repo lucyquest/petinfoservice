@@ -1,3 +1,7 @@
+-- name: GetIdempotencyEntry :one
+SELECT response, status_code, status_text, locked_at, step
+FROM idempotency WHERE user_id = $1 AND key = $2 AND method_path = $3 AND request = $4;
+
 -- name: GetPetByID :one
 SELECT * FROM pets
 WHERE id = sqlc.arg(ids) LIMIT 1;

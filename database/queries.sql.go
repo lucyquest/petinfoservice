@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,6 +28,44 @@ func (q *Queries) AddPet(ctx context.Context, arg AddPetParams) (uuid.UUID, erro
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getIdempotencyEntry = `-- name: GetIdempotencyEntry :one
+SELECT response, status_code, status_text, locked_at, step
+FROM idempotency WHERE user_id = $1 AND key = $2 AND method_path = $3 AND request = $4
+`
+
+type GetIdempotencyEntryParams struct {
+	UserID     uuid.UUID
+	Key        string
+	MethodPath string
+	Request    []byte
+}
+
+type GetIdempotencyEntryRow struct {
+	Response   []byte
+	StatusCode int32
+	StatusText sql.NullString
+	LockedAt   time.Time
+	Step       string
+}
+
+func (q *Queries) GetIdempotencyEntry(ctx context.Context, arg GetIdempotencyEntryParams) (GetIdempotencyEntryRow, error) {
+	row := q.db.QueryRowContext(ctx, getIdempotencyEntry,
+		arg.UserID,
+		arg.Key,
+		arg.MethodPath,
+		arg.Request,
+	)
+	var i GetIdempotencyEntryRow
+	err := row.Scan(
+		&i.Response,
+		&i.StatusCode,
+		&i.StatusText,
+		&i.LockedAt,
+		&i.Step,
+	)
+	return i, err
 }
 
 const getPetByID = `-- name: GetPetByID :one

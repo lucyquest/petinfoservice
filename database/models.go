@@ -5,16 +5,22 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type Idempotency struct {
-	ID       uuid.UUID
-	Function string
-	Step     string
-	LastUsed time.Time
+	UserID     uuid.UUID
+	Key        string
+	MethodPath string
+	Request    []byte
+	Response   []byte
+	StatusCode int32
+	StatusText sql.NullString
+	LockedAt   time.Time
+	Step       string
 }
 
 type Pet struct {
