@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -22,107 +22,66 @@ var (
 	client petinfoproto.PetInfoServiceClient
 )
 
-func TestMain(m *testing.M) {
-	// Force an non-zero exit code if a error happened anywhere
-	var err error
+func testMain(m *testing.M) (exitCode int, err error) {
+	testDB := testDB{
+		User: os.Getenv("POSTGRES_USER"),
+		Pass: os.Getenv("POSTGRES_PASS"),
+		Host: os.Getenv("POSTGRES_HOST"),
+	}
+
+	err = testDB.Open()
+	if err != nil {
+		return exitCode, err
+	}
 	defer func() {
-		if err != nil {
-			os.Exit(1)
+		if err2 := testDB.Close(); err2 != nil {
+			err = errors.Join(err, fmt.Errorf("could not close testDB error (%w)", err2))
 		}
 	}()
 
-	// Setup database and service for testing.
-	// TODO: switch to a database per test?
+	// Startup gRPC service.
+	service := NewService(
+		":9999",
+		nil,
+		database.New(testDB.DB),
+		testDB.DB,
+	)
 
-	// Prepare a database to use in postgres
-	postgresUser := os.Getenv("POSTGRES_USER")
-	postgresPass := os.Getenv("POSTGRES_PASS")
-	postgresHost := os.Getenv("POSTGRES_HOST")
-
-	connMainURI := fmt.Sprintf("postgres://%v:%v@%v?sslmode=disable", postgresUser, postgresPass, postgresHost)
-	dbMain, err := sql.Open("postgres", connMainURI)
-	if err != nil {
-		log.Printf("could not open postgres database (%v) error (%v)", connMainURI, err)
-		return
-	}
-	defer dbMain.Close()
-
-	_, err = dbMain.Exec("CREATE DATABASE petinfoservice;")
-	if err != nil {
-		log.Printf("could not create petinfoservice database (%v)", err)
-		return
-	}
-
-	// Connect to the prepared postgres database and assign it to a global variable
-	connURI := fmt.Sprintf("postgres://%v:%v@%v/petinfoservice?sslmode=disable", postgresUser, postgresPass, postgresHost)
-	db, err := sql.Open("postgres", connURI)
-	if err != nil {
-		log.Fatalf("could not open petinfoservice database (%v) error (%v)", connURI, err)
-		return
-	}
-
-	schema, err := os.ReadFile("../database/schema.sql")
-	if err != nil {
-		log.Printf("could not read ../database/schema.sql error (%v)", err)
-		return
-	}
-
-	_, err = db.Exec(string(schema))
-	if err != nil {
-		log.Printf("could not create schema in database (%v)", err)
-		return
-	}
-
-	// Startup gRPC service
-	service := Service{
-		Addr:    ":9999",
-		Queries: database.New(db),
-		DB:      db,
-	}
 	serviceErr := make(chan error, 1)
 	go func() {
 		serviceErr <- service.Open()
 	}()
 
-	// Setup gRPC client
+	defer func() {
+		service.Close()
+
+		err2 := <-serviceErr
+		if err2 != nil {
+			err = errors.Join(err, fmt.Errorf("error while running grpc service (%w)", err2))
+		}
+	}()
+
+	// Setup gRPC client.
 	conn, err := grpc.Dial("localhost:9999", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Printf("could not dial test gRPC server error (%v)", err)
-		return
+		return exitCode, fmt.Errorf("could not dial test gRPC server error (%w)", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err2 := conn.Close(); err2 != nil {
+			err = errors.Join(err, fmt.Errorf("could not close grpc client connection (%w)", err2))
+		}
+	}()
 
 	client = petinfoproto.NewPetInfoServiceClient(conn)
 
-	// Run tests.
-	exitCode := m.Run()
+	return m.Run(), nil
+}
 
-	// Cleanup gRPC service and database.
-	service.Close()
-	err = <-serviceErr
+func TestMain(m *testing.M) {
+	exitCode, err := testMain(m)
 	if err != nil {
-		log.Printf("error while running grpc service (%v)", err)
-		return
+		log.Println(err)
 	}
-
-	err = db.Close()
-	if err != nil {
-		log.Printf("could not close db connection. error: (%v)", err)
-		return
-	}
-
-	_, err = dbMain.Exec("DROP DATABASE petinfoservice;")
-	if err != nil {
-		log.Printf("could not delete database during cleanup stage")
-		return
-	}
-
-	err = dbMain.Close()
-	if err != nil {
-		log.Printf("could not close db connection. error: (%v)", err)
-		return
-	}
-
 	os.Exit(exitCode)
 }
 
