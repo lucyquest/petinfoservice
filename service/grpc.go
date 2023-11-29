@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -30,12 +31,27 @@ type Service struct {
 	grpcServer *grpc.Server
 
 	petInfoService *petInfoService
+
+	closeErr chan error
+}
+
+func NewService(addr string, certificate *tls.Certificate, queries *database.Queries, db *sql.DB) *Service {
+	return &Service{
+		Addr:        addr,
+		Certificate: certificate,
+		Queries:     queries,
+		DB:          db,
+		closeErr:    make(chan error, 1),
+	}
 }
 
 type UserID struct{}
 
+// TODO: create a real userID system
+var fakeID uuid.UUID = uuid.New()
+
 func (s *Service) authenticationUnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	return handler(context.WithValue(ctx, UserID{}, uuid.New()), req)
+	return handler(context.WithValue(ctx, UserID{}, fakeID), req)
 }
 
 // TODO: readiness probe for k8s
@@ -79,7 +95,17 @@ func (s *Service) Open() error {
 
 	petinfoproto.RegisterPetInfoServiceServer(s.grpcServer, s.petInfoService)
 
-	return s.grpcServer.Serve(l)
+	err = s.grpcServer.Serve(l)
+	if err != nil {
+		err = fmt.Errorf("grpc server Serve error (%w)", err)
+	}
+
+	err2 := s.petInfoService.db.Close()
+	if err2 != nil {
+		err = errors.Join(err, fmt.Errorf("could not close sql DB error (%w)", err2))
+	}
+
+	return err
 }
 
 func (s *Service) Close() {
