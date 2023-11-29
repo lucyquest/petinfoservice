@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -130,11 +131,7 @@ func (p *petInfoService) Add(ctx context.Context, req *petinfoproto.PetAddReques
 		return nil, status.Error(codes.Internal, "Internal error occurred")
 	}
 	defer func() {
-		if err == nil {
-			return
-		}
-
-		if err2 := tx.Rollback(); err2 != nil {
+		if err2 := tx.Rollback(); err2 != nil && !errors.Is(err2, sql.ErrTxDone) {
 			slog.Error("Unknown error from database while rolling back transaction",
 				"error", err2.Error(),
 				"method", petinfoproto.PetInfoService_Add_FullMethodName,
@@ -145,14 +142,34 @@ func (p *petInfoService) Add(ctx context.Context, req *petinfoproto.PetAddReques
 	qtx := p.queries.WithTx(tx)
 
 	userID := ctx.Value(UserID{}).(uuid.UUID)
-	idem, err := qtx.GetIdempotencyEntry(ctx, database.GetIdempotencyEntryParams{
+
+	// Handle if idempotency key exists in the Database
+	idemResponse, err := qtx.GetIdempotencyEntry(ctx, database.GetIdempotencyEntryParams{
 		UserID:     userID,
 		Key:        req.IdempotencyKey,
 		MethodPath: petinfoproto.PetInfoService_Add_FullMethodName,
 		Request:    requestProtobufBytes,
 	})
 
-	_ = idem
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+	case err != nil:
+		slog.Error("Unknown error from database while getting idempotency key",
+			"error", err.Error(),
+			"method", petinfoproto.PetInfoService_Add_FullMethodName,
+		)
+		return nil, status.Error(codes.Internal, "Internal error occurred")
+	default:
+		response := &petinfoproto.PetAddResponse{}
+		if err = proto.Unmarshal(idemResponse, response); err != nil {
+			slog.Error("Unknown error while unmarshaling protobuf message from idempotency entry",
+				"error", err,
+				"method", petinfoproto.PetInfoService_Add_FullMethodName,
+			)
+			return nil, status.Error(codes.Internal, "Internal error occurred")
+		}
+		return response, nil
+	}
 
 	petID, err := qtx.AddPet(ctx, database.AddPetParams{
 		Name:        req.Pet.Name,
@@ -160,7 +177,35 @@ func (p *petInfoService) Add(ctx context.Context, req *petinfoproto.PetAddReques
 	})
 	switch {
 	case err != nil:
-		slog.Error("Unknown error from database",
+		slog.Error("Unknown error from database while adding pet",
+			"error", err,
+			"method", petinfoproto.PetInfoService_Add_FullMethodName,
+		)
+		return nil, status.Error(codes.Internal, "Internal error occurred")
+	}
+
+	response := &petinfoproto.PetAddResponse{
+		ID: petID.String(),
+	}
+
+	responseProtoBytes, err := proto.Marshal(response)
+	if err != nil {
+		slog.Error("Unknown error while marshaling responseProtobuf",
+			"error", err,
+			"method", petinfoproto.PetInfoService_Add_FullMethodName,
+		)
+		return nil, status.Error(codes.Internal, "Internal error occurred")
+	}
+
+	err = qtx.AddIdempotencyEntry(ctx, database.AddIdempotencyEntryParams{
+		UserID:     userID,
+		Key:        req.IdempotencyKey,
+		MethodPath: petinfoproto.PetInfoService_Add_FullMethodName,
+		Request:    requestProtobufBytes,
+		Response:   responseProtoBytes,
+	})
+	if err != nil {
+		slog.Error("Unknown error from database while adding idempotency entry",
 			"error", err,
 			"method", petinfoproto.PetInfoService_Add_FullMethodName,
 		)
@@ -174,5 +219,5 @@ func (p *petInfoService) Add(ctx context.Context, req *petinfoproto.PetAddReques
 		)
 	}
 
-	return &petinfoproto.PetAddResponse{ID: petID.String()}, nil
+	return response, nil
 }
