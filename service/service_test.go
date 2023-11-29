@@ -86,27 +86,36 @@ func TestMain(m *testing.M) {
 }
 
 func TestAddGetPets(t *testing.T) {
-	testPets := []database.Pet{
+	tests := []struct {
+		id  string
+		Pet database.Pet
+	}{
 		{
-			Name:        "Lucy",
-			DateOfBirth: time.Date(2007, 01, 10, 0, 0, 0, 0, time.UTC),
+			Pet: database.Pet{
+				Name:        "Lucy",
+				DateOfBirth: time.Date(2007, 01, 10, 0, 0, 0, 0, time.UTC),
+			},
 		},
 		{
-			Name:        "Miles",
-			DateOfBirth: time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC),
+			Pet: database.Pet{
+				Name:        "Miles",
+				DateOfBirth: time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC),
+			},
 		},
 		{
-			Name:        "Milo",
-			DateOfBirth: time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC),
+			Pet: database.Pet{
+				Name:        "Milo",
+				DateOfBirth: time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC),
+			},
 		},
 	}
 
-	for i := range testPets {
+	for i := range tests {
 		addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
-			IdempotencyKey: uuid.NewString(),
+			IdempotencyKey: tests[i].Pet.Name,
 			Pet: &petinfoproto.Pet{
-				Name:        testPets[i].Name,
-				DateOfBirth: timestamppb.New(testPets[i].DateOfBirth),
+				Name:        tests[i].Pet.Name,
+				DateOfBirth: timestamppb.New(tests[i].Pet.DateOfBirth),
 			},
 		})
 		if err != nil {
@@ -115,26 +124,43 @@ func TestAddGetPets(t *testing.T) {
 
 		id, err := uuid.Parse(addResp.ID)
 		if err != nil {
-			t.Fatalf("expected a valid uuid for (%v) error (%v)", testPets[i].Name, err)
+			t.Fatalf("expected a valid uuid for (%v) error (%v)", tests[i].Pet.Name, err)
 		}
-
-		testPets[i].ID = id
 
 		getResp, err := client.Get(context.Background(), &petinfoproto.PetGetRequest{ID: id.String()})
 		if err != nil {
-			t.Fatalf("could not get pet (%v) error (%v)", testPets[i].Name, err)
+			t.Fatalf("could not get pet (%v) error (%v)", tests[i].Pet.Name, err)
 		}
 
 		if getResp.Pet.ID != id.String() {
-			t.Fatalf("expected pet (%v) id to be (%v) got (%v)", testPets[i].Name, id.String(), getResp.Pet.ID)
+			t.Fatalf("expected pet (%v) id to be (%v) got (%v)", tests[i].Pet.Name, id.String(), getResp.Pet.ID)
 		}
 
-		if getResp.Pet.Name != testPets[i].Name {
-			t.Fatalf("expected pet (%v) name to be (%v) got (%v)", testPets[i].Name, testPets[i].Name, getResp.Pet.Name)
+		if getResp.Pet.Name != tests[i].Pet.Name {
+			t.Fatalf("expected pet (%v) name to be (%v) got (%v)", tests[i].Pet.Name, tests[i].Pet.Name, getResp.Pet.Name)
 		}
 
-		if !getResp.Pet.DateOfBirth.AsTime().Equal(testPets[i].DateOfBirth) {
-			t.Fatalf("expected pet (%v) date of birth to be (%v) got (%v)", testPets[i].Name, testPets[i].DateOfBirth, getResp.Pet.DateOfBirth.AsTime())
+		if !getResp.Pet.DateOfBirth.AsTime().Equal(tests[i].Pet.DateOfBirth) {
+			t.Fatalf("expected pet (%v) date of birth to be (%v) got (%v)", tests[i].Pet.Name, tests[i].Pet.DateOfBirth, getResp.Pet.DateOfBirth.AsTime())
+		}
+
+		tests[i].id = id.String()
+	}
+
+	for i := range tests {
+		addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
+			IdempotencyKey: tests[i].Pet.Name,
+			Pet: &petinfoproto.Pet{
+				Name:        tests[i].Pet.Name,
+				DateOfBirth: timestamppb.New(tests[i].Pet.DateOfBirth),
+			},
+		})
+		if err != nil {
+			t.Fatalf("could not add pet (%v)", err)
+		}
+
+		if tests[i].id != addResp.ID {
+			t.Fatalf("expected idempotent id (%v) to be (%v)", tests[i].id, addResp.ID)
 		}
 	}
 }
