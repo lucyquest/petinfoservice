@@ -13,12 +13,7 @@ CREATE TABLE idempotency (
   PRIMARY KEY (user_id, key, method_path, request),
 
   -- response in protobuf format
-  response    BYTEA,
-  status_code INT     NOT NULL,
-  status_text TEXT,
-
-  locked_at TIMESTAMPTZ NOT NULL,
-  step      TEXT        NOT NULL
+  response    BYTEA
 );
 
 CREATE TABLE pets (

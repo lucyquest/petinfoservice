@@ -1,43 +1,32 @@
 -- name: GetIdempotencyEntry :one
-SELECT response, status_code, status_text, locked_at, step
+SELECT response
 FROM idempotency WHERE user_id = $1 AND key = $2 AND method_path = $3 AND request = $4;
 
 -- name: UpdateIdempotencyEntry :exec
 UPDATE idempotency
 SET 
-  response    = $5 AND
-  status_code = $6 AND
-  status_text = $7 AND
-  locked_at   = $8 AND
-  step        = $9
+  response    = $1
 WHERE 
-  user_id     = $1 AND
-  key         = $2 AND
-  method_path = $3 AND
-  request     = $4;
+  user_id     = $2 AND
+  key         = $3 AND
+  method_path = $4 AND
+  request     = $5;
 
 
 -- name: AddIdempotencyEntry :exec
-INSERT INTO idempotency
+INSERT INTO idempotency (
   user_id,
   key,
   method_path,
   request,
-  response,
-  status_code,
-  status_text,
-  locked_at,
-  step
+  response
+)
 VALUES (
   $1,
   $2,
   $3,
   $4,
-  $5,
-  $6,
-  $7,
-  $8,
-  $9
+  $5
 );
 
 -- name: GetPetByID :one

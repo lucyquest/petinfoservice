@@ -5,7 +5,6 @@
 package database
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,10 +16,6 @@ type Idempotency struct {
 	MethodPath string
 	Request    []byte
 	Response   []byte
-	StatusCode int32
-	StatusText sql.NullString
-	LockedAt   time.Time
-	Step       string
 }
 
 type Pet struct {

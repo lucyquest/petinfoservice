@@ -7,12 +7,47 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
+
+const addIdempotencyEntry = `-- name: AddIdempotencyEntry :exec
+INSERT INTO idempotency (
+  user_id,
+  key,
+  method_path,
+  request,
+  response
+)
+VALUES (
+  $1,
+  $2,
+  $3,
+  $4,
+  $5
+)
+`
+
+type AddIdempotencyEntryParams struct {
+	UserID     uuid.UUID
+	Key        string
+	MethodPath string
+	Request    []byte
+	Response   []byte
+}
+
+func (q *Queries) AddIdempotencyEntry(ctx context.Context, arg AddIdempotencyEntryParams) error {
+	_, err := q.db.ExecContext(ctx, addIdempotencyEntry,
+		arg.UserID,
+		arg.Key,
+		arg.MethodPath,
+		arg.Request,
+		arg.Response,
+	)
+	return err
+}
 
 const addPet = `-- name: AddPet :one
 INSERT INTO pets (name, date_of_birth) VALUES ($1, $2) RETURNING id
@@ -31,7 +66,7 @@ func (q *Queries) AddPet(ctx context.Context, arg AddPetParams) (uuid.UUID, erro
 }
 
 const getIdempotencyEntry = `-- name: GetIdempotencyEntry :one
-SELECT response, status_code, status_text, locked_at, step
+SELECT response
 FROM idempotency WHERE user_id = $1 AND key = $2 AND method_path = $3 AND request = $4
 `
 
@@ -42,30 +77,16 @@ type GetIdempotencyEntryParams struct {
 	Request    []byte
 }
 
-type GetIdempotencyEntryRow struct {
-	Response   []byte
-	StatusCode int32
-	StatusText sql.NullString
-	LockedAt   time.Time
-	Step       string
-}
-
-func (q *Queries) GetIdempotencyEntry(ctx context.Context, arg GetIdempotencyEntryParams) (GetIdempotencyEntryRow, error) {
+func (q *Queries) GetIdempotencyEntry(ctx context.Context, arg GetIdempotencyEntryParams) ([]byte, error) {
 	row := q.db.QueryRowContext(ctx, getIdempotencyEntry,
 		arg.UserID,
 		arg.Key,
 		arg.MethodPath,
 		arg.Request,
 	)
-	var i GetIdempotencyEntryRow
-	err := row.Scan(
-		&i.Response,
-		&i.StatusCode,
-		&i.StatusText,
-		&i.LockedAt,
-		&i.Step,
-	)
-	return i, err
+	var response []byte
+	err := row.Scan(&response)
+	return response, err
 }
 
 const getPetByID = `-- name: GetPetByID :one
@@ -106,6 +127,36 @@ func (q *Queries) GetPetsByIDs(ctx context.Context, ids []uuid.UUID) ([]Pet, err
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateIdempotencyEntry = `-- name: UpdateIdempotencyEntry :exec
+UPDATE idempotency
+SET 
+  response    = $1
+WHERE 
+  user_id     = $2 AND
+  key         = $3 AND
+  method_path = $4 AND
+  request     = $5
+`
+
+type UpdateIdempotencyEntryParams struct {
+	Response   []byte
+	UserID     uuid.UUID
+	Key        string
+	MethodPath string
+	Request    []byte
+}
+
+func (q *Queries) UpdateIdempotencyEntry(ctx context.Context, arg UpdateIdempotencyEntryParams) error {
+	_, err := q.db.ExecContext(ctx, updateIdempotencyEntry,
+		arg.Response,
+		arg.UserID,
+		arg.Key,
+		arg.MethodPath,
+		arg.Request,
+	)
+	return err
 }
 
 const updatePetDateOfBirth = `-- name: UpdatePetDateOfBirth :exec
