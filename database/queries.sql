@@ -29,6 +29,8 @@ VALUES (
   $5
 );
 
+-- TODO: these queries that select * get more data than needed
+
 -- name: GetPetByID :one
 SELECT * FROM pets
 WHERE id = sqlc.arg(ids) LIMIT 1;

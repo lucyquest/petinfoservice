@@ -16,8 +16,11 @@ CREATE TABLE idempotency (
   response    BYTEA
 );
 
+
+
 CREATE TABLE pets (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name          TEXT    NOT NULL,
-  date_of_birth DATE    NOT NULL
+  row_id        serial    NOT NULL PRIMARY KEY,
+  id            UUID      NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
+  name          TEXT      NOT NULL,
+  date_of_birth DATE      NOT NULL
 );
