@@ -31,10 +31,11 @@ func testMain(m *testing.M) (exitCode int, err error) {
 
 	err = testDB.Open()
 	if err != nil {
-		return exitCode, err
+		return 1, err
 	}
 	defer func() {
 		if err2 := testDB.Close(); err2 != nil {
+			exitCode = 1
 			err = errors.Join(err, fmt.Errorf("could not close testDB error (%w)", err2))
 		}
 	}()
@@ -57,6 +58,7 @@ func testMain(m *testing.M) (exitCode int, err error) {
 
 		err2 := <-serviceErr
 		if err2 != nil {
+			exitCode = 1
 			err = errors.Join(err, fmt.Errorf("error while running grpc service (%w)", err2))
 		}
 	}()
@@ -64,10 +66,11 @@ func testMain(m *testing.M) (exitCode int, err error) {
 	// Setup gRPC client.
 	conn, err := grpc.Dial("localhost:9999", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return exitCode, fmt.Errorf("could not dial test gRPC server error (%w)", err)
+		return 1, fmt.Errorf("could not dial test gRPC server error (%w)", err)
 	}
 	defer func() {
 		if err2 := conn.Close(); err2 != nil {
+			exitCode = 1
 			err = errors.Join(err, fmt.Errorf("could not close grpc client connection (%w)", err2))
 		}
 	}()
