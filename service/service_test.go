@@ -113,25 +113,29 @@ func TestAddGetPets(t *testing.T) {
 		},
 	}
 
-	for i := range tests {
+	_ = resp
+}
 
-var testPets = []petinfoproto.Pet{
-	{
-		Name:        "Lucy",
-		DateOfBirth: timestamppb.New(time.Date(2007, 01, 10, 0, 0, 0, 0, time.UTC)),
-	},
-	{
-		Name:        "Miles",
-		DateOfBirth: timestamppb.New(time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC)),
-	},
-	{
-		Name:        "Milo",
-		DateOfBirth: timestamppb.New(time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC)),
-	},
+func getTestPets() []*petinfoproto.Pet {
+	return []*petinfoproto.Pet{
+		{
+			Name:        "Lucy",
+			DateOfBirth: timestamppb.New(time.Date(2007, 01, 10, 0, 0, 0, 0, time.UTC)),
+		},
+		{
+			Name:        "Miles",
+			DateOfBirth: timestamppb.New(time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC)),
+		},
+		{
+			Name:        "Milo",
+			DateOfBirth: timestamppb.New(time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC)),
+		},
+	}
 }
 
 
 func TestAddGetPets(t *testing.T) {
+	testPets := getTestPets()
 	ids := make([]string, len(testPets))
 	for i := range testPets {
 		addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
