@@ -14,7 +14,9 @@ import (
 	"github.com/lucyquest/petinfoservice/database"
 	"github.com/lucyquest/petinfoservice/petinfoproto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -88,28 +90,50 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestAddGetPets(t *testing.T) {
+func TestGetPetsInvalidUUID(t *testing.T) {
+	// Create resp for "no error" test
+	resp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
+		IdempotencyKey: t.Name(),
+		Pet: &petinfoproto.Pet{
+			Name:        t.Name(),
+			DateOfBirth: timestamppb.Now(),
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		// TODO: delete id
+	}()
+
 	tests := []struct {
-		id  string
-		Pet database.Pet
+		name string
+		id   string
+		code codes.Code
 	}{
 		{
-			Pet: database.Pet{
-				Name:        "Lucy",
-				DateOfBirth: time.Date(2007, 01, 10, 0, 0, 0, 0, time.UTC),
-			},
+			name: "no error",
+			id:   resp.ID,
+			code: codes.OK,
 		},
 		{
-			Pet: database.Pet{
-				Name:        "Miles",
-				DateOfBirth: time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC),
-			},
+			name: "empty id",
+			id:   "",
+			code: codes.InvalidArgument,
 		},
-		{
-			Pet: database.Pet{
-				Name:        "Milo",
-				DateOfBirth: time.Date(2023, 01, 20, 0, 0, 0, 0, time.UTC),
-			},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := client.Get(context.Background(), &petinfoproto.PetGetRequest{ID: tt.id})
+			if status.Code(err) != tt.code {
+				t.Errorf("expected error to be status code (%v) got error (%v:%T)", tt.code, err, err)
+			}
+		})
+	}
+}
+
 		},
 	}
 
