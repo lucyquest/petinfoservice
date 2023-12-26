@@ -139,7 +139,7 @@ func TestAddGetPets(t *testing.T) {
 	ids := make([]string, len(testPets))
 	for i := range testPets {
 		addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
-			IdempotencyKey: testPets[i].Name,
+			IdempotencyKey: testPets[i].Name + t.Name(),
 			Pet: &petinfoproto.Pet{
 				Name:        testPets[i].Name,
 				DateOfBirth: testPets[i].DateOfBirth,
@@ -176,7 +176,7 @@ func TestAddGetPets(t *testing.T) {
 
 	for i := range testPets {
 		addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
-			IdempotencyKey: testPets[i].Name,
+			IdempotencyKey: testPets[i].Name + t.Name(),
 			Pet: &petinfoproto.Pet{
 				Name:        testPets[i].Name,
 				DateOfBirth: testPets[i].DateOfBirth,
