@@ -18,6 +18,9 @@ generate: generate-proto generate-sqlc
 build-dockerfile:
 	podman build . --tag claytontii/petinfoservice:latest
 
+spawndb:
+	podman run --name petinfoservice-postgres --rm -e POSTGRES_PASSWORD=bestpassword -p 5432:5432 --health-cmd="pg_isready" postgres:16.0-alpine3.17
+
 test: 
 	$(info petinfoservice-makefile: Spawning postgres container)
 	podman run --name petinfoservice-postgres --rm -e POSTGRES_PASSWORD=bestpassword -p 5432:5432 --health-cmd="pg_isready" postgres:16.0-alpine3.17 &
