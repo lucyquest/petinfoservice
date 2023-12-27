@@ -29,6 +29,8 @@ func (p *petInfoService) Get(ctx context.Context, req *petinfoproto.PetGetReques
 
 	pet, err := p.queries.GetPetByID(ctx, id)
 	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, status.Error(codes.NotFound, "That pet does not exist")
 	case err != nil:
 		slog.Error("Unknown error from database", "error", err)
 		return nil, status.Error(codes.Internal, "Internal error occurred")
