@@ -4,6 +4,7 @@ option go_package = "github.com/lucyquest/petinfoservice/petinfoproto";
 
 import "google/protobuf/timestamp.proto";
 
+// On update of Pet, update service/petconv.go and potentially schema
 message Pet {
   string ID = 1;
   string Name = 2;

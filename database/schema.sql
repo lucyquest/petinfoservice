@@ -16,8 +16,7 @@ CREATE TABLE idempotency (
   response    BYTEA
 );
 
-
-
+-- on schema change of pets, update service/petconv and petinfoproto 
 CREATE TABLE pets (
   row_id        serial    NOT NULL PRIMARY KEY,
   id            UUID      NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
