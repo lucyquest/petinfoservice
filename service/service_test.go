@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -134,12 +136,6 @@ func TestGetPetsInvalidUUID(t *testing.T) {
 	}
 }
 
-		},
-	}
-
-	_ = resp
-}
-
 func getTestPets() []*petinfoproto.Pet {
 	return []*petinfoproto.Pet{
 		{
@@ -157,6 +153,55 @@ func getTestPets() []*petinfoproto.Pet {
 	}
 }
 
+func TestGetMultiple(t *testing.T) {
+	t.Run("golden path", func(t *testing.T) {
+		testPets := getTestPets()
+		ids := make([]string, len(testPets))
+		for i := range testPets {
+			addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
+				IdempotencyKey: testPets[i].Name + t.Name(),
+				Pet:            testPets[i],
+			})
+			if err != nil {
+				t.Fatalf("could not add pet (%v:T)", err)
+			}
+
+			ids[i] = addResp.ID
+			testPets[i].ID = addResp.ID
+			// TODO: cleanup after ourselves (or implement per a per test DB)
+		}
+
+		resp, err := client.GetMultiple(context.Background(), &petinfoproto.PetGetMultipleRequest{IDs: ids})
+		if err != nil {
+			t.Fatalf("could not get multiple pets error (%v)", err)
+		}
+
+		if len(resp.Pets) != len(testPets) {
+			t.Fatalf("expected len(resp.Pets)(%v) to be len(testPets)(%v)", len(resp.Pets), len(testPets))
+		}
+
+		// do a search for the ID, since there might not be a guarantee results are ordered
+		for _, p := range resp.Pets {
+			i := slices.IndexFunc(testPets, func(pp *petinfoproto.Pet) bool {
+				return p.ID == pp.ID
+			})
+
+			if !proto.Equal(testPets[i], p) {
+				t.Fatalf("expected testPets(%v) to be resp.Pets(%v)", testPets[i], p)
+			}
+		}
+	})
+
+	t.Run("invalid uuid", func(t *testing.T) {
+		_, err := client.GetMultiple(context.Background(), &petinfoproto.PetGetMultipleRequest{
+			IDs: []string{"invalid-uuid", "invalid-uuid2"},
+		})
+
+		if status.Code(err) != codes.InvalidArgument {
+			t.Fatalf("expected status.Code(InvalidArgument) got (%v:%T)", err, err)
+		}
+	})
+}
 
 func TestAddGetPets(t *testing.T) {
 	testPets := getTestPets()
