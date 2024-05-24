@@ -47,3 +47,6 @@ UPDATE pets SET date_of_birth = $2 WHERE id = $1;
 
 -- name: AddPet :one
 INSERT INTO pets (name, date_of_birth) VALUES ($1, $2) RETURNING id;
+
+-- name: DeletePet :exec
+DELETE FROM pets WHERE id = $1;

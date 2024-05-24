@@ -203,6 +203,40 @@ func TestGetMultiple(t *testing.T) {
 	})
 }
 
+func TestUpdateDateOfBirth(t *testing.T) {
+	testPets := getTestPets()
+	for _, pet := range testPets {
+		addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
+			IdempotencyKey: t.Name() + pet.Name,
+			Pet:            pet,
+		})
+		if err != nil {
+			t.Fatalf("could not add pet error (%v)", err)
+		}
+
+		pet.ID = addResp.ID
+
+		timeToSetTo := time.Now()
+		_, err = client.UpdateDateOfBirth(context.Background(), &petinfoproto.PetUpdateDateOfBirthRequest{
+			ID:          pet.ID,
+			DateOfBirth: timestamppb.New(timeToSetTo),
+		})
+		if err != nil {
+			t.Fatalf("could not update date of birth (%v)", err)
+		}
+
+		getPet, err := client.Get(context.Background(), &petinfoproto.PetGetRequest{ID: pet.ID})
+		if err != nil {
+			t.Fatalf("could not get pet (%v)", err)
+		}
+
+		pet.DateOfBirth = timestamppb.New(timeToSetTo)
+		if !proto.Equal(pet, getPet.Pet) {
+			t.Fatalf("expected getPet.Pet(%v) to equal pet(%v)", getPet.Pet, pet)
+		}
+	}
+}
+
 func TestAddGetPets(t *testing.T) {
 	testPets := getTestPets()
 	ids := make([]string, len(testPets))
@@ -257,6 +291,34 @@ func TestAddGetPets(t *testing.T) {
 
 		if ids[i] != addResp.ID {
 			t.Fatalf("expected idempotent id (%v) to be (%v)", ids[i], addResp.ID)
+		}
+	}
+}
+
+func TestDeletePet(t *testing.T) {
+	testPets := getTestPets()
+	for _, pet := range testPets {
+		addResp, err := client.Add(context.Background(), &petinfoproto.PetAddRequest{
+			IdempotencyKey: pet.Name + t.Name(),
+			Pet:            pet,
+		})
+		if err != nil {
+			t.Fatalf("could not add pet (%v)", err)
+		}
+
+		_, err = client.Get(context.Background(), &petinfoproto.PetGetRequest{
+			ID: addResp.ID,
+		})
+		if err != nil {
+			t.Fatalf("could not get pet (%v)", err)
+		}
+
+		_, err = client.Remove(context.Background(), &petinfoproto.PetRemoveRequest{
+			IdempotencyKey: pet.Name + t.Name(),
+			Id:             pet.ID,
+		})
+		if err != nil {
+			t.Fatalf("could not delete pet (%v) error (%v)", pet.ID, err)
 		}
 	}
 }

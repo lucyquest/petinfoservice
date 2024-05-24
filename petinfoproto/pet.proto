@@ -50,10 +50,19 @@ message PetAddResponse {
   string ID = 1;
 }
 
+message PetRemoveRequest {
+  string idempotency_key = 1;
+  string id = 2;
+}
+
+message PetRemoveResponse {
+}
+
 service PetInfoService {
   rpc Get(PetGetRequest) returns (PetGetResponse);
   rpc GetMultiple(PetGetMultipleRequest) returns (PetGetMultipleResponse);
   rpc UpdateName(PetUpdateNameRequest) returns (PetUpdateNameResponse);
   rpc UpdateDateOfBirth(PetUpdateDateOfBirthRequest) returns (PetUpdateDateOfBirthResponse);
   rpc Add(PetAddRequest) returns (PetAddResponse);
+  rpc Remove(PetRemoveRequest) returns (PetRemoveResponse);
 }

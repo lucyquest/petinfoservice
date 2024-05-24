@@ -66,6 +66,10 @@ func (p *petInfoService) UpdateName(ctx context.Context, req *petinfoproto.PetUp
 		return nil, status.Error(codes.InvalidArgument, "invalid ID")
 	}
 
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is empty")
+	}
+
 	err = p.queries.UpdatePetName(ctx, database.UpdatePetNameParams{
 		ID:   id,
 		Name: req.Name,
@@ -85,17 +89,23 @@ func (p *petInfoService) UpdateDateOfBirth(ctx context.Context, req *petinfoprot
 		return nil, status.Error(codes.InvalidArgument, "invalid ID")
 	}
 
+	if req.DateOfBirth.CheckValid() != nil {
+		return nil, status.Error(codes.InvalidArgument, "date of birth not valid")
+	}
+
 	err = p.queries.UpdatePetDateOfBirth(ctx, database.UpdatePetDateOfBirthParams{
 		ID:          id,
 		DateOfBirth: req.DateOfBirth.AsTime(),
 	})
 	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, status.Error(codes.NotFound, "That pet does not exist")
 	case err != nil:
 		slog.Error("Unknown error from database", "error", err)
 		return nil, status.Error(codes.Internal, "Internal error occurred")
 	}
 
-	return nil, nil
+	return &petinfoproto.PetUpdateDateOfBirthResponse{}, nil
 }
 
 func (p *petInfoService) Add(ctx context.Context, req *petinfoproto.PetAddRequest) (*petinfoproto.PetAddResponse, error) {
@@ -222,4 +232,8 @@ func (p *petInfoService) Add(ctx context.Context, req *petinfoproto.PetAddReques
 	}
 
 	return response, nil
+}
+
+func (p *petInfoService) Remove(ctx context.Context, req *petinfoproto.PetRemoveRequest) (*petinfoproto.PetRemoveResponse, error) {
+	return nil, nil
 }
